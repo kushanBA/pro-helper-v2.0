@@ -1,5 +1,10 @@
-const router = express.router();
+import express from "express";
+import authRoutes from "./modules/auth/auth.routes.ts";
 
-router.get('test',()=>{
-    console.log('test route is running');
-})
+
+const app = express();
+
+app.use(express.json());
+app.use('/api/auth',authRoutes)
+
+export default app;
