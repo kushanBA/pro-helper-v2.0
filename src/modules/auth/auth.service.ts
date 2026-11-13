@@ -21,10 +21,13 @@ export async function register(input: RegisterInput) {
   const passwordHash = await argon2.hash(input.password);
 
   try {
+    // role is not passed: the database default (USER) applies, so clients can never choose it
     return await createUser({
       email: input.email,
       passwordHash,
-      role: "CUSTOMER", // hard-coded: clients can never choose their role
+      name: input.name,
+      mobileNumber: input.mobileNumber,
+      gender: input.gender,
     });
   } catch (err) {
     if (isUniqueConstraintError(err)) {

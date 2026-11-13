@@ -13,10 +13,17 @@ datasource db {
 }
 
 
+// Every normal account is USER: a customer by default, and a provider once
+// they have a provider profile. Provider access is not a role.
 enum UserRole {
-  CUSTOMER
-  PROVIDER
+  USER
   ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
 }
 
 enum AccountStatus {
@@ -28,7 +35,10 @@ model User {
   id           String        @id @default(uuid()) @db.Uuid
   email        String        @unique
   passwordHash String        @map("password_hash")
-  role         UserRole
+  name         String
+  mobileNumber String        @map("mobile_number")
+  gender       Gender
+  role         UserRole      @default(USER)
   status       AccountStatus @default(ACTIVE)
   createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz
