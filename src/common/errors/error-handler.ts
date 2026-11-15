@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { MulterError } from "multer";
 import { AppError } from "./app-error.ts";
 
 // Errors thrown by Express's body parser (bad JSON, body too large, ...)
@@ -12,6 +13,13 @@ function isClientHttpError(err: unknown): err is { status: number } {
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
   if (err instanceof AppError) {
     res.status(err.statusCode).json({ success: false, error: { message: err.message } });
+    return;
+  }
+
+  // Multer rejects an upload (file too large, too many files, unexpected field).
+  if (err instanceof MulterError) {
+    const status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+    res.status(status).json({ success: false, error: { message: err.message } });
     return;
   }
 

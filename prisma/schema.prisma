@@ -38,6 +38,13 @@ enum ActiveMode {
   PROVIDER
 }
 
+// A provider is only listed to customers once an admin approves their NIC.
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id              String           @id @default(uuid()) @db.Uuid
   email           String           @unique
@@ -69,18 +76,55 @@ model ServiceCategory {
 }
 
 model ProviderProfile {
-  id                String                    @id @default(uuid()) @db.Uuid
-  userId            String                    @unique @map("user_id") @db.Uuid
-  businessName      String?                   @map("business_name")
-  bio               String
-  yearsOfExperience Int                       @map("years_of_experience")
-  serviceAreas      String[]                  @map("service_areas")
-  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt         DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
-  user              User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categories        ProviderProfileCategory[]
+  id                 String                    @id @default(uuid()) @db.Uuid
+  userId             String                    @unique @map("user_id") @db.Uuid
+  businessName       String?                   @map("business_name")
+  bio                String // the provider's description of what they do
+  yearsOfExperience  Int                       @map("years_of_experience")
+  serviceAreas       String[]                  @map("service_areas")
+  location           String // base location
+  hourlyRate         Int                       @map("hourly_rate") // whole rupees, no decimals
+  specialization     String? // AI-suggested, editable
+  skills             String[] // AI-suggested, editable
+  verificationStatus VerificationStatus        @default(PENDING) @map("verification_status")
+  createdAt          DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+  user               User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories         ProviderProfileCategory[]
+  verification       ProviderVerification?
+  workSamples        ProviderWorkSample[]
 
   @@map("provider_profiles")
+}
+
+// Sensitive KYC data kept in its own table so access can be locked down and
+// it is never sent to customers. Only paths to the images are stored here.
+model ProviderVerification {
+  id                String          @id @default(uuid()) @db.Uuid
+  providerProfileId String          @unique @map("provider_profile_id") @db.Uuid
+  nicNumber         String          @map("nic_number")
+  nicFrontImagePath String          @map("nic_front_image_path")
+  nicBackImagePath  String          @map("nic_back_image_path")
+  reviewedById      String?         @map("reviewed_by_id") @db.Uuid // admin who reviewed
+  reviewedAt        DateTime?       @map("reviewed_at") @db.Timestamptz
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  providerProfile   ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+
+  @@map("provider_verifications")
+}
+
+// Optional portfolio: one row per work sample (an image path + a short caption).
+model ProviderWorkSample {
+  id                String          @id @default(uuid()) @db.Uuid
+  providerProfileId String          @map("provider_profile_id") @db.Uuid
+  imagePath         String          @map("image_path")
+  caption           String
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  providerProfile   ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+
+  @@index([providerProfileId])
+  @@map("provider_work_samples")
 }
 
 model ProviderProfileCategory {

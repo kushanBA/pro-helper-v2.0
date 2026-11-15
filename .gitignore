@@ -18,6 +18,9 @@ npm-debug.log*
 # Test / coverage output
 coverage/
 
+# Uploaded files (local storage)
+uploads/
+
 # OS and editor files
 .DS_Store
 Thumbs.db
