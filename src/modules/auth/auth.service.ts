@@ -1,21 +1,9 @@
 import argon2 from "argon2";
-import { SignJWT } from "jose";
-import { env } from "../../config/env.ts";
 import { AppError } from "../../common/errors/app-error.ts";
+import { isUniqueConstraintError } from "../../common/errors/prisma-errors.ts";
+import { signAccessToken } from "../../common/auth/jwt.ts";
 import { findUserByEmail, createUser } from "../auth/auth.repository.ts";
 import type { LoginInput, RegisterInput } from "./auth.schema.ts";
-
-const jwtSecret = new TextEncoder().encode(env.JWT_SECRET);
-
-// Prisma throws this code when a unique constraint (here: email) is violated.
-function isUniqueConstraintError(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code: unknown }).code === "P2002"
-  );
-}
 
 export async function register(input: RegisterInput) {
   const passwordHash = await argon2.hash(input.password);
@@ -53,17 +41,17 @@ export async function login(input: LoginInput) {
     throw new AppError(403, "Account is not active");
   }
 
-  const accessToken = await new SignJWT({ role: user.role })
-    .setProtectedHeader({ alg: "HS256" })
-    .setSubject(user.id)
-    .setIssuer(env.JWT_ISSUER)
-    .setAudience(env.JWT_AUDIENCE)
-    .setIssuedAt()
-    .setExpirationTime(env.JWT_EXPIRES_IN)
-    .sign(jwtSecret);
+  const accessToken = await signAccessToken({ id: user.id, role: user.role });
 
   return {
     accessToken,
-    user: { id: user.id, email: user.email, role: user.role }, // never return passwordHash
+    // never return passwordHash
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      activeMode: user.activeMode,
+      isProvider: user.providerProfile !== null,
+    },
   };
 }

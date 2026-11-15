@@ -4,7 +4,15 @@ import type { Gender } from "../../generated/prisma/enums.ts";
 export function findUserByEmail(email: string) {
   return prisma.user.findUnique({
     where: { email },
-    select: { id: true, email: true, passwordHash: true, role: true, status: true },
+    select: {
+      id: true,
+      email: true,
+      passwordHash: true,
+      role: true,
+      status: true,
+      activeMode: true,
+      providerProfile: { select: { id: true } },
+    },
   });
 }
 
@@ -20,6 +28,6 @@ type CreateUserData = {
 export function createUser(data: CreateUserData) {
   return prisma.user.create({
     data,
-    select: { id: true, email: true, name: true, role: true, status: true },
+    select: { id: true, email: true, name: true, role: true, status: true, activeMode: true },
   });
 }

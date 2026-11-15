@@ -31,17 +31,66 @@ enum AccountStatus {
   SUSPENDED
 }
 
+// Which side of the app the user is currently using. This is only a UI
+// preference: provider permissions come from having a ProviderProfile.
+enum ActiveMode {
+  CUSTOMER
+  PROVIDER
+}
+
 model User {
-  id           String        @id @default(uuid()) @db.Uuid
-  email        String        @unique
-  passwordHash String        @map("password_hash")
-  name         String
-  mobileNumber String        @map("mobile_number")
-  gender       Gender
-  role         UserRole      @default(USER)
-  status       AccountStatus @default(ACTIVE)
-  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  id              String           @id @default(uuid()) @db.Uuid
+  email           String           @unique
+  passwordHash    String           @map("password_hash")
+  name            String
+  mobileNumber    String           @map("mobile_number")
+  gender          Gender
+  role            UserRole         @default(USER)
+  status          AccountStatus    @default(ACTIVE)
+  activeMode      ActiveMode       @default(CUSTOMER) @map("active_mode")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  providerProfile ProviderProfile?
 
   @@map("users")
+}
+
+model ServiceCategory {
+  id          String                    @id @default(uuid()) @db.Uuid
+  name        String                    @unique
+  slug        String                    @unique
+  description String?
+  isActive    Boolean                   @default(true) @map("is_active")
+  createdAt   DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+  providers   ProviderProfileCategory[]
+
+  @@map("service_categories")
+}
+
+model ProviderProfile {
+  id                String                    @id @default(uuid()) @db.Uuid
+  userId            String                    @unique @map("user_id") @db.Uuid
+  businessName      String?                   @map("business_name")
+  bio               String
+  yearsOfExperience Int                       @map("years_of_experience")
+  serviceAreas      String[]                  @map("service_areas")
+  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+  user              User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories        ProviderProfileCategory[]
+
+  @@map("provider_profiles")
+}
+
+model ProviderProfileCategory {
+  providerProfileId String          @map("provider_profile_id") @db.Uuid
+  categoryId        String          @map("category_id") @db.Uuid
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  providerProfile   ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+  category          ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@id([providerProfileId, categoryId])
+  @@index([categoryId])
+  @@map("provider_profile_categories")
 }
