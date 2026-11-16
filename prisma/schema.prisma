@@ -45,6 +45,13 @@ enum VerificationStatus {
   REJECTED
 }
 
+// How far a provider is willing to serve. NEARBY uses their location for
+// customer matching (logic added later); ISLAND_WIDE serves everyone.
+enum ServiceCoverage {
+  ISLAND_WIDE
+  NEARBY
+}
+
 model User {
   id              String           @id @default(uuid()) @db.Uuid
   email           String           @unique
@@ -81,7 +88,7 @@ model ProviderProfile {
   businessName       String?                   @map("business_name")
   bio                String // the provider's description of what they do
   yearsOfExperience  Int                       @map("years_of_experience")
-  serviceAreas       String[]                  @map("service_areas")
+  serviceCoverage    ServiceCoverage           @map("service_coverage")
   location           String // base location
   hourlyRate         Int                       @map("hourly_rate") // whole rupees, no decimals
   specialization     String? // AI-suggested, editable

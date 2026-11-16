@@ -9,6 +9,8 @@ const envSchema = z.object({
   JWT_ISSUER: z.string().min(1),
   JWT_AUDIENCE: z.string().min(1),
   JWT_EXPIRES_IN: z.string().default("15m"),
+  // Optional: AI profile suggestions are disabled (503) when this is absent.
+  GEMINI_API_KEY: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
